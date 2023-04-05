@@ -4,6 +4,7 @@ import io.rong.imlib.IRongCallback;
 import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
+import io.rong.imlib.model.MessageContent;
 import io.rong.message.TextMessage;
 
 public class IMUtil {
@@ -19,15 +20,27 @@ public class IMUtil {
             currentUid = cUid;
         }
 
-        if(currentUid.equals(Constant.userId2)){
-            return Constant.userId1;
-        }else{
+        if(currentUid.equals(Constant.userId1)){
             return Constant.userId2;
+        }else{
+            return Constant.userId1;
+        }
+    }
+
+    public static boolean isSelf(String uid){
+        return currentUid.equals(uid);
+    }
+
+    public static String getOtherSideNick(){
+        if(DeviceUtil.getHardware().equals("kirin9000")){
+            return "宝贝";
+        }else{
+            return "老公";
         }
     }
 
     //发送消息
-    public static void sendMsg(String msg){
+    public static Message sendMsg(String msg){
         String targetId = getTargetId();
         Conversation.ConversationType conversationType = Conversation.ConversationType.PRIVATE;
         TextMessage messageContent = TextMessage.obtain(msg);
@@ -51,5 +64,6 @@ public class IMUtil {
 
             }
         });
+        return message;
     }
 }

@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import com.app.ourchat.network.model.MainModel
+import com.app.ourchat.utils.EventBusUtil
+import com.app.ourchat.utils.MessageEvent
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 abstract class BaseActivity : AppCompatActivity() {
 
@@ -16,8 +20,8 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(getContentView())
+        EventBusUtil.register(this)
 
         initView()
     }
@@ -38,7 +42,19 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        EventBusUtil.unRegister(this)
         disposables.clear()
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    open fun onMessageEvent(message:MessageEvent){
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
+    open fun onStickyMessageEvent(message:MessageEvent){
+
     }
 
 

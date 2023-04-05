@@ -4,9 +4,48 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/bg_color"
+    android:fitsSystemWindows="true"
     tools:context=".ui.activity.MainActivity">
 
     <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@color/white"
+        android:id="@+id/rl_header">
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:layout_marginLeft="16dp"
+            android:textColor="@color/black"
+            android:text="对话中..."
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            />
+    </RelativeLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_msg"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/vline"
+        app:layout_constraintTop_toBottomOf="@id/rl_header"
+        tools:listitem="@layout/item_layout_message"
+        />
+
+    <View
+        android:id="@+id/vline"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/line_color"
+        app:layout_constraintBottom_toTopOf="@+id/rl_bottom"
+        />
+    <RelativeLayout
+        android:id="@+id/rl_bottom"
         android:layout_width="match_parent"
         android:layout_height="55dp"
         app:layout_constraintBottom_toBottomOf="parent">
@@ -17,6 +56,12 @@
             android:layout_height="match_parent"
             android:layout_toLeftOf="@+id/tv_send"
             android:layout_alignParentLeft="true"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginVertical="10dp"
+            android:background="@drawable/bg_message_other"
+            android:paddingLeft="10dp"
+            android:textSize="15sp"
+            android:hint="～～～ I love you ～～～"
             />
 
         <TextView
@@ -24,8 +69,13 @@
             android:layout_width="60dp"
             android:layout_height="match_parent"
             android:layout_alignParentRight="true"
+            android:layout_marginVertical="10dp"
             android:layout_centerVertical="true"
             android:gravity="center"
-            android:text="发送" />
+            android:textColor="@color/white"
+            android:background="@drawable/bg_message_self"
+            android:text="发送"
+            android:layout_marginRight="10dp"
+            />
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

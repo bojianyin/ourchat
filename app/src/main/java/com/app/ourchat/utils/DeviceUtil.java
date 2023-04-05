@@ -7,12 +7,14 @@ public class DeviceUtil {
 
         String uuid = SPUtil.INSTANCE.getString(SPUtil.UUID);
         if("".equals(uuid)){
-            if(android.os.Build.HARDWARE.equals("kirin9000")){
-                SPUtil.INSTANCE.putString(SPUtil.UUID,Constant.userId2);
-                return Constant.userId2;
-            }else{
+            if(getHardware().equals("kirin9000")){
                 SPUtil.INSTANCE.putString(SPUtil.UUID,Constant.userId1);
+                IMUtil.currentUid = Constant.userId1;
                 return Constant.userId1;
+            }else{
+                SPUtil.INSTANCE.putString(SPUtil.UUID,Constant.userId2);
+                IMUtil.currentUid = Constant.userId2;
+                return Constant.userId2;
             }
         }else{
             return uuid;
@@ -28,6 +30,10 @@ public class DeviceUtil {
 //        }
 //        return uuid;
 
+    }
+
+    public static String getHardware(){
+        return android.os.Build.HARDWARE;
     }
 
 }

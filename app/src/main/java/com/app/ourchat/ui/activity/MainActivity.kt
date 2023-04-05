@@ -1,27 +1,35 @@
 package com.app.ourchat.ui.activity
 
+import android.content.Intent
 import android.text.TextUtils
 import android.util.Log
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.app.ourchat.R
+import com.app.ourchat.adapter.MessageAdapter
 import com.app.ourchat.base.BaseActivity
 import com.app.ourchat.network.bean.IMTokenBean
 import com.app.ourchat.network.model.BaseResponseObserver
-import com.app.ourchat.utils.DeviceUtil
-import com.app.ourchat.utils.IMUtil
-import com.app.ourchat.utils.SPUtil
-import io.rong.imlib.RongCoreClient
+import com.app.ourchat.ui.services.ConnectService
+import com.app.ourchat.utils.*
+import com.jaeger.library.StatusBarUtil
 import io.rong.imlib.RongIMClient
-import io.rong.imlib.listener.OnReceiveMessageWrapperListener
 import io.rong.imlib.model.Conversation
 import io.rong.imlib.model.Message
-import io.rong.imlib.model.ReceivedProfile
 
 
 class MainActivity : BaseActivity() {
 
     val tvSend: TextView by lazy { findViewById(R.id.tv_send) }
+    val tvTitle: TextView by lazy { findViewById(R.id.tv_title) }
+    val rvMsg: RecyclerView by lazy { findViewById(R.id.rv_msg) }
+    val adapter:MessageAdapter by lazy { MessageAdapter() }
+    val etMsg:EditText by lazy { findViewById(R.id.et_msg) }
+    private var lyManager:LinearLayoutManager? = null
 
     override fun getContentView(): Int = R.layout.activity_main
 
@@ -29,10 +37,33 @@ class MainActivity : BaseActivity() {
     override fun initView() {
         super.initView()
 
+        StatusBarUtil.setColor(this,ContextCompat.getColor(this,R.color.white),0)
+        StatusBarUtil.setLightMode(this)
+        tvTitle.text = "❤️❤️❤️ (连接中...)"
+        lyManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL,true)
+        rvMsg.layoutManager = lyManager
+        rvMsg.adapter = adapter
+
+        adapter.loadMoreModule.setOnLoadMoreListener {
+            Log.d(TAG,"loadMoreModule ....")
+            val lastMessage = getLastMessage()
+            val messageId = lastMessage?.messageId ?: return@setOnLoadMoreListener
+            getHistoryMessage(messageId)
+        }
+
         initToken()
 
         tvSend.setOnClickListener {
-            IMUtil.sendMsg("王八蛋")
+            val text = etMsg.text.toString()
+            if("".equals(text)){
+                return@setOnClickListener
+            }
+
+            val message = IMUtil.sendMsg(text)
+            message.senderUserId = IMUtil.currentUid
+            etMsg.setText("")
+            adapter.addData(0,message)
+            lyManager?.scrollToPositionWithOffset(0,0)
         }
     }
 
@@ -52,66 +83,23 @@ class MainActivity : BaseActivity() {
                 }
             })
         }else{
+            IMUtil.currentUid = SPUtil.getString(SPUtil.UUID)
             initConnect(token)
         }
     }
 
-    fun initConnect(token:String){
-        RongIMClient.connect(token,5,MyConnectCallback())
+    fun initConnect(token:String) {
+        ConnectService.openService(this,token)
     }
 
 
-    inner class MyConnectCallback : RongIMClient.ConnectCallback(){
-        override fun onSuccess(t: String?) {
-            //连接成功，如果 onDatabaseOpened() 时没有页面跳转，也可在此时进行跳转。
-
-            RongCoreClient.addOnReceiveMessageListener(listener)
-            getHistoryMessage()
-        }
-
-        override fun onError(e: RongIMClient.ConnectionErrorCode?) {
-            e?.run {
-                if(equals(RongIMClient.ConnectionErrorCode.RC_CONN_TOKEN_EXPIRE)) {
-                    //从 APP 服务请求新 token，获取到新 token 后重新 connect()
-                } else if (equals(RongIMClient.ConnectionErrorCode.RC_CONNECT_TIMEOUT)) {
-                    //连接超时，弹出提示，可以引导用户等待网络正常的时候再次点击进行连接
-                } else {
-                    //其它业务错误码，请根据相应的错误码作出对应处理。
-                }
-            }
-
-        }
-
-        override fun onDatabaseOpened(code: RongIMClient.DatabaseOpenStatus?) {
-            if(RongIMClient.DatabaseOpenStatus.DATABASE_OPEN_SUCCESS.equals(code)) {
-                //本地数据库打开，跳转到会话列表页面
-            } else {
-                //数据库打开失败，可以弹出 toast 提示。
-            }
-        }
-
-    }
-
-    val listener = object : OnReceiveMessageWrapperListener() {
-        override fun onReceivedMessage(message: Message?, profile: ReceivedProfile?) {
-            Log.d(TAG,message?.content?.toString() ?: "null")
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        RongCoreClient.removeOnReceiveMessageListener(listener)
-    }
-
-
-    fun getHistoryMessage(){
+    fun getHistoryMessage(messageId:Int = -1){
         val conversationType: Conversation.ConversationType = Conversation.ConversationType.PRIVATE
         val targetId = IMUtil.getTargetId()
-        val oldestMessageId = -1
-        val count = 10
+        val count = 30
 
         RongIMClient.getInstance()
-            .getHistoryMessages(conversationType, targetId, oldestMessageId, count,
+            .getHistoryMessages(conversationType, targetId, messageId, count,
                 object : RongIMClient.ResultCallback<List<Message?>?>() {
                     /**
                      * 成功时回调
@@ -119,6 +107,22 @@ class MainActivity : BaseActivity() {
                      */
                     override fun onSuccess(messages: List<Message?>?) {
                         Log.d(TAG,messages?.size?.toString()?:"0")
+                        messages?.run{
+                            if(size>0){
+                                if(messageId == -1){
+                                    adapter.setList(this)
+                                } else {
+                                    adapter.addData(adapter.data.size,this)
+                                }
+                                adapter.loadMoreModule.loadMoreComplete()
+                                if(size<count){
+                                    adapter.loadMoreModule.loadMoreEnd()
+                                }
+                            }else{
+                                adapter.setList(null)
+                                adapter.loadMoreModule.loadMoreEnd()
+                            }
+                        }
                     }
 
                     /**
@@ -129,5 +133,38 @@ class MainActivity : BaseActivity() {
 
                     }
                 })
+    }
+
+    override fun onMessageEvent(message: MessageEvent) {
+        super.onMessageEvent(message)
+        when(message.msgType){
+            MessageEvent.msg_received_chat -> {
+                if(message.content!=null && message.content is Message){
+                    val imMessage = message.content as Message
+                    adapter.addData(0,imMessage)
+                    lyManager?.scrollToPositionWithOffset(0,0)
+
+                }
+            }
+
+            MessageEvent.msg_connect_success -> {
+                tvTitle.text = "❤️❤️❤️"
+                getHistoryMessage()
+            }
+        }
+
+    }
+
+    fun getLastMessage():Message? {
+        if(adapter.data.size<=0) return null
+        return adapter.data[adapter.data.size-1]
+    }
+
+
+    override fun onBackPressed() {
+//        super.onBackPressed()
+        val homeIntent = Intent(Intent.ACTION_MAIN)
+        homeIntent.addCategory(Intent.CATEGORY_HOME)
+        startActivity(homeIntent)
     }
 }

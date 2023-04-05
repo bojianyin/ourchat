@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_name">baby_msg</string>
+    <string name="channel_description">接受对方消息</string>
+</resources>

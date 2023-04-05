@@ -6,12 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
 import androidx.fragment.app.Fragment
+import com.app.ourchat.utils.EventBusUtil
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 abstract class BaseFragment :Fragment() {
 
     var rootLayout:View? = null
 
     var mUserVisible:Boolean = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        EventBusUtil.register(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,6 +71,22 @@ abstract class BaseFragment :Fragment() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        EventBusUtil.unRegister(this)
+    }
+
     @LayoutRes
     abstract fun getContentView():Int
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onMessageEvent(){
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = true)
+    fun onStickyMessageEvent(){
+
+    }
+
 }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="10dp"
+    android:gravity="start|center"
+    android:layout_marginBottom="20dp"
+    android:layout_marginRight="10dp"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/tv_send_person"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="发送者"
+        android:layout_alignParentRight="true"
+        />
+    <TextView
+        android:id="@+id/tv_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="5dp"
+        tools:text="this is message"
+        android:textSize="16sp"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_message_self"
+        android:layout_below="@id/tv_send_person"
+        android:textColor="@color/white"
+        />
+</RelativeLayout>
