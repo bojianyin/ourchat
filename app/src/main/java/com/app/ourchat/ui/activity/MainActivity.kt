@@ -147,9 +147,13 @@ class MainActivity : BaseActivity() {
                 }
             }
 
-            MessageEvent.msg_connect_success -> {
+            MessageEvent.msg_db_open -> {
                 tvTitle.text = "❤️❤️❤️"
                 getHistoryMessage()
+            }
+
+            MessageEvent.msg_token_incorrect -> {
+                initToken()
             }
         }
 

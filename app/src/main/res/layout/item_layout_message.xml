@@ -13,6 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:text="发送者"
+        android:textColor="@color/gray666"
         />
     <TextView
         android:id="@+id/tv_message"

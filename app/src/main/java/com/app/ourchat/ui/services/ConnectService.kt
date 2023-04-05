@@ -7,11 +7,21 @@ import android.os.IBinder
 import android.util.Log
 import com.app.ourchat.utils.EventBusUtil
 import com.app.ourchat.utils.MessageEvent
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import io.rong.imlib.IRongCoreListener
+import io.rong.imlib.RongCoreClient
 import io.rong.imlib.RongIMClient
+import java.util.*
+import java.util.concurrent.TimeUnit
 
-class ConnectService : Service() {
+class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     var connectToken = ""
+    var isOpenNativeDB = false
+    private var disposable:Disposable? = null
     companion object {
         var TOKEN = "token"
         var isConnectService:Boolean = false
@@ -31,28 +41,40 @@ class ConnectService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d("ConnectService","onCreate>>>")
-        RongIMClient.setConnectionStatusListener {
-            if(it.value == RongIMClient.ConnectionStatusListener.ConnectionStatus.UNCONNECTED.value){
-                isConnectService = false
+        RongCoreClient.setConnectionStatusListener(this)
+
+        disposable = Observable.interval(5000L,2000L,TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe {
+                if(isConnectService) return@subscribe
+                connectIM()
             }
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(isConnectService) {
-            EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
+            if(isOpenNativeDB) EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
             return super.onStartCommand(intent, flags, startId)
         }
         intent?.run {
             connectToken = getStringExtra(TOKEN) ?: ""
-            RongIMClient.connect(connectToken,5,MyConnectCallback())
+            connectIM()
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    fun connectIM(){
+        if("".equals(connectToken)) return
+        RongIMClient.connect(connectToken,5,MyConnectCallback())
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
+        disposable?.dispose()
+        RongIMClient.getInstance().disconnect()
+        RongCoreClient.removeConnectionStatusListener(this)
         stopSelf()
     }
 
@@ -81,11 +103,40 @@ class ConnectService : Service() {
         override fun onDatabaseOpened(code: RongIMClient.DatabaseOpenStatus?) {
             if(RongIMClient.DatabaseOpenStatus.DATABASE_OPEN_SUCCESS.equals(code)) {
                 //本地数据库打开，跳转到会话列表页面
-//                EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
+                isOpenNativeDB = true
+                EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
             } else {
                 //数据库打开失败，可以弹出 toast 提示。
             }
         }
 
+    }
+
+
+    override fun onChanged(status: IRongCoreListener.ConnectionStatusListener.ConnectionStatus?) {
+        when(status){
+            IRongCoreListener.ConnectionStatusListener.ConnectionStatus.UNCONNECTED
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.NETWORK_UNAVAILABLE
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.KICKED_OFFLINE_BY_OTHER_CLIENT
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.CONN_USER_BLOCKED
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.SIGN_OUT
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.SUSPEND
+                ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.TIMEOUT -> {
+
+                isConnectService = false
+
+            }
+
+            IRongCoreListener.ConnectionStatusListener.ConnectionStatus.TOKEN_INCORRECT -> {
+                isConnectService = false
+                EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_token_incorrect))
+
+                stopSelf()
+
+            }
+            else -> {
+
+            }
+        }
     }
 }

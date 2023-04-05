@@ -6,6 +6,8 @@ public class MessageEvent {
 
     public static final int msg_received_chat = 1;
     public static final int msg_connect_success = 2;
+    public static final int msg_db_open = 3;
+    public static final int msg_token_incorrect = 3;
 
 
     public MessageEvent(){

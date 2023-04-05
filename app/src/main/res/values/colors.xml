@@ -11,4 +11,6 @@
     <color name="message_self_color">#6bb466</color>
     <color name="message_other_color">#FFFFFFFF</color>
     <color name="line_color">#cccccc</color>
+    <color name="gray333">#333333</color>
+    <color name="gray666">#666666</color>
 </resources>

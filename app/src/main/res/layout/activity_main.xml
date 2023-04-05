@@ -61,6 +61,8 @@
             android:background="@drawable/bg_message_other"
             android:paddingLeft="10dp"
             android:textSize="15sp"
+            android:textColor="@color/black"
+            android:textColorHint="@color/line_color"
             android:hint="～～～ I love you ～～～"
             />
 

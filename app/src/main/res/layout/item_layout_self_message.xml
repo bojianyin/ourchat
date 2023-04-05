@@ -14,6 +14,7 @@
         android:layout_height="wrap_content"
         tools:text="发送者"
         android:layout_alignParentRight="true"
+        android:textColor="@color/gray666"
         />
     <TextView
         android:id="@+id/tv_message"
