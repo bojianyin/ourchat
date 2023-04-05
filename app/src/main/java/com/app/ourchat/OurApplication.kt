@@ -9,6 +9,8 @@ import io.rong.imlib.listener.OnReceiveMessageWrapperListener
 import io.rong.imlib.model.Message
 import io.rong.imlib.model.ReceivedProfile
 import io.rong.message.TextMessage
+import io.rong.push.RongPushClient
+import io.rong.push.pushconfig.PushConfig
 
 class OurApplication : Application() {
 
@@ -30,8 +32,11 @@ class OurApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         appContext = this
-        RongCoreClient.init(this, Constant.rongCloudAppKey)
+        RongCoreClient.init(this, Constant.rongCloudAppKey,true)
         RongCoreClient.addOnReceiveMessageListener(messageListener)
+        val build = PushConfig.Builder().enableRongPush(true).build()
+        RongPushClient.setPushConfig(build)
+        RongPushClient.init(this, Constant.rongCloudAppKey)
     }
 
     override fun attachBaseContext(base: Context?) {

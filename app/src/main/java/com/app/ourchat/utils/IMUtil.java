@@ -1,5 +1,7 @@
 package com.app.ourchat.utils;
 
+import android.util.Log;
+
 import io.rong.imlib.IRongCallback;
 import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
@@ -51,17 +53,17 @@ public class IMUtil {
 
             @Override
             public void onAttached(Message message) {
-
+                Log.d("IMUtil","onAttached");
             }
 
             @Override
             public void onSuccess(Message message) {
-
+                Log.d("IMUtil","onSuccess");
             }
 
             @Override
             public void onError(Message message, RongIMClient.ErrorCode errorCode) {
-
+                Log.d("IMUtil","error");
             }
         });
         return message;

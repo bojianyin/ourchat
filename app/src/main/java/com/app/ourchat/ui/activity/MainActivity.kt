@@ -29,7 +29,9 @@ class MainActivity : BaseActivity() {
     val rvMsg: RecyclerView by lazy { findViewById(R.id.rv_msg) }
     val adapter:MessageAdapter by lazy { MessageAdapter() }
     val etMsg:EditText by lazy { findViewById(R.id.et_msg) }
+    private var token = ""
     private var lyManager:LinearLayoutManager? = null
+    private var isNeedStartService:Boolean = false
 
     override fun getContentView(): Int = R.layout.activity_main
 
@@ -89,6 +91,8 @@ class MainActivity : BaseActivity() {
     }
 
     fun initConnect(token:String) {
+        this.token = token
+        isNeedStartService = false
         ConnectService.openService(this,token)
     }
 
@@ -148,15 +152,45 @@ class MainActivity : BaseActivity() {
             }
 
             MessageEvent.msg_db_open -> {
-                tvTitle.text = "❤️❤️❤️"
+
                 getHistoryMessage()
             }
 
             MessageEvent.msg_token_incorrect -> {
                 initToken()
             }
+
+
+            MessageEvent.msg_connect_success -> {
+                tvTitle.text = "❤️❤️❤️"
+            }
         }
 
+    }
+
+    override fun onStickyMessageEvent(message: MessageEvent) {
+        super.onStickyMessageEvent(message)
+        when(message.msgType){
+            MessageEvent.msg_service_destory -> {
+                if("".equals(this.token)) {
+                    initToken()
+                    return
+                }
+                if(AppUtil.isBackground(this)){
+                    //isNeedStartService
+                    isNeedStartService = true
+
+                }else{
+                    initConnect(this.token)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(isNeedStartService) initConnect(this.token)
+        getHistoryMessage()
     }
 
     fun getLastMessage():Message? {

@@ -20,11 +20,12 @@ import java.util.concurrent.TimeUnit
 class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     var connectToken = ""
-    var isOpenNativeDB = false
+
     private var disposable:Disposable? = null
     companion object {
         var TOKEN = "token"
         var isConnectService:Boolean = false
+        var isOpenNativeDB = false
 
         fun openService(context:Context,token:String){
             val intent = Intent(context, ConnectService::class.java)
@@ -72,8 +73,10 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        isConnectService = false
+        EventBusUtil.postStickyMessage(MessageEvent(MessageEvent.msg_service_destory))
         disposable?.dispose()
-        RongIMClient.getInstance().disconnect()
+//        RongIMClient.getInstance().disconnect()
         RongCoreClient.removeConnectionStatusListener(this)
         stopSelf()
     }
@@ -91,10 +94,14 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
             e?.run {
                 if(equals(RongIMClient.ConnectionErrorCode.RC_CONN_TOKEN_EXPIRE)) {
                     //从 APP 服务请求新 token，获取到新 token 后重新 connect()
+                    stopSelf()
                 } else if (equals(RongIMClient.ConnectionErrorCode.RC_CONNECT_TIMEOUT)) {
                     //连接超时，弹出提示，可以引导用户等待网络正常的时候再次点击进行连接
-                } else {
-                    //其它业务错误码，请根据相应的错误码作出对应处理。
+                } else if(equals(RongIMClient.ConnectionErrorCode.RC_CONNECTION_EXIST)){
+                    //连接已经存在，不需要重复连接。
+                    isConnectService = true
+                }else{
+
                 }
             }
 
