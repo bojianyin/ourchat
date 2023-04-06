@@ -2,6 +2,7 @@ package com.app.ourchat
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import androidx.multidex.MultiDex
 import com.app.ourchat.utils.*
 import io.rong.imlib.RongCoreClient
@@ -20,9 +21,11 @@ class OurApplication : Application(), PushEventListener {
 
     private val messageListener = object : OnReceiveMessageWrapperListener() {
         override fun onReceivedMessage(message: Message?, profile: ReceivedProfile?) {
-            if(message?.content is TextMessage){
-                val textMessage = message.content as TextMessage
-                NotificationUtil.pushNotification(appContext, IMUtil.getOtherSideNick(),textMessage.content)
+            if(AppUtil.isBackground(appContext)){
+                if(message?.content is TextMessage){
+                    val textMessage = message.content as TextMessage
+                    NotificationUtil.pushNotification(appContext, IMUtil.getOtherSideNick(),textMessage.content)
+                }
             }
             EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_received_chat,message))
         }
@@ -44,6 +47,12 @@ class OurApplication : Application(), PushEventListener {
         RongPushClient.setPushConfig(build)
         RongPushClient.setPushEventListener(this)
         RongPushClient.init(this, Constant.rongCloudAppKey)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(!AppUtil.isIgnoringBatteryOptimizations(this)){
+                AppUtil.requestIgnoreBatteryOptimizations(this)
+            }
+        }
     }
 
     override fun attachBaseContext(base: Context?) {

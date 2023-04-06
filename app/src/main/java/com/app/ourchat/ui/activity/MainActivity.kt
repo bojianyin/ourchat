@@ -189,6 +189,7 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        NotificationUtil.cancelAll(this)
         if(isNeedStartService) initConnect(this.token)
         getHistoryMessage()
     }

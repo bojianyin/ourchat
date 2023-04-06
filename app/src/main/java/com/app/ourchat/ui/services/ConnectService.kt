@@ -1,12 +1,19 @@
 package com.app.ourchat.ui.services
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresApi
+import com.app.ourchat.R
 import com.app.ourchat.utils.EventBusUtil
 import com.app.ourchat.utils.MessageEvent
+import com.app.ourchat.utils.NotificationUtil
+import com.app.ourchat.utils.ToastUtil
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -27,10 +34,17 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
         var isConnectService:Boolean = false
         var isOpenNativeDB = false
 
-        fun openService(context:Context,token:String){
+        fun openService(context:Context, token:String){
+            //启动服务
             val intent = Intent(context, ConnectService::class.java)
             intent.putExtra(TOKEN,token)
-            context.startService(intent)
+            // Android 8.0使用startForegroundService在前台启动新服务
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                context.startForegroundService(intent)
+            }else{
+                context.startService(intent)
+            }
+
         }
 
     }
@@ -42,12 +56,14 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
     override fun onCreate() {
         super.onCreate()
         Log.d("ConnectService","onCreate>>>")
+        NotificationUtil.startForegroundWithNotification(this)
         RongCoreClient.setConnectionStatusListener(this)
 
         disposable = Observable.interval(5000L,2000L,TimeUnit.MILLISECONDS)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.newThread())
             .subscribeOn(Schedulers.io())
             .subscribe {
+                Log.d("ConnectService","disposableing.......")
                 if(isConnectService) return@subscribe
                 connectIM()
             }
@@ -133,6 +149,7 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
                 ,IRongCoreListener.ConnectionStatusListener.ConnectionStatus.TIMEOUT -> {
 
                 isConnectService = false
+                connectIM()
 
             }
 
@@ -142,6 +159,9 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
                 stopSelf()
 
+            }
+            IRongCoreListener.ConnectionStatusListener.ConnectionStatus.CONNECTED -> {
+                isConnectService = true
             }
             else -> {
 
