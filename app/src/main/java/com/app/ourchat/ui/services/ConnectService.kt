@@ -1,5 +1,6 @@
 package com.app.ourchat.ui.services
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -7,7 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.app.ourchat.R
 import com.app.ourchat.utils.EventBusUtil
@@ -27,6 +31,8 @@ import java.util.concurrent.TimeUnit
 class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     var connectToken = ""
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var a=0;
 
     private var disposable:Disposable? = null
     companion object {
@@ -57,12 +63,18 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
         super.onCreate()
         Log.d("ConnectService","onCreate>>>")
         NotificationUtil.startForegroundWithNotification(this)
+
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyKeepScreen")
+        wakeLock?.acquire()
         RongCoreClient.setConnectionStatusListener(this)
 
         disposable = Observable.interval(5000L,2000L,TimeUnit.MILLISECONDS)
-            .observeOn(Schedulers.newThread())
             .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
+                a++
+                Toast.makeText(this,"定时任务running a=$a...",Toast.LENGTH_SHORT).show()
                 Log.d("ConnectService","disposableing.......")
                 if(isConnectService) return@subscribe
                 connectIM()
@@ -90,6 +102,7 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        wakeLock?.release()
         isConnectService = false
         EventBusUtil.postStickyMessage(MessageEvent(MessageEvent.msg_service_destory))
         disposable?.dispose()
