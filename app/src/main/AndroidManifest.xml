@@ -38,7 +38,8 @@
 
         <service
             android:name=".ui.services.ConnectService"
-            android:exported="false"></service>
+            android:exported="false"
+            />
     </application>
 
 </manifest>
