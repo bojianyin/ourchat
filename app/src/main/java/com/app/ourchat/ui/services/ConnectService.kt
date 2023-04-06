@@ -55,6 +55,7 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(isConnectService) {
+            EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
             if(isOpenNativeDB) EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
             return super.onStartCommand(intent, flags, startId)
         }
@@ -100,6 +101,7 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
                 } else if(equals(RongIMClient.ConnectionErrorCode.RC_CONNECTION_EXIST)){
                     //连接已经存在，不需要重复连接。
                     isConnectService = true
+                    EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
                 }else{
 
                 }
