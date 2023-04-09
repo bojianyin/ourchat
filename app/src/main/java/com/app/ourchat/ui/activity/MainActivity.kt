@@ -1,6 +1,7 @@
 package com.app.ourchat.ui.activity
 
 import android.content.Intent
+import android.content.IntentFilter
 import android.text.TextUtils
 import android.util.Log
 import android.widget.EditText
@@ -14,6 +15,7 @@ import com.app.ourchat.adapter.MessageAdapter
 import com.app.ourchat.base.BaseActivity
 import com.app.ourchat.network.bean.IMTokenBean
 import com.app.ourchat.network.model.BaseResponseObserver
+import com.app.ourchat.ui.broadcast.ConnectReceiver
 import com.app.ourchat.ui.services.ConnectService
 import com.app.ourchat.utils.*
 import com.jaeger.library.StatusBarUtil
@@ -33,11 +35,22 @@ class MainActivity : BaseActivity() {
     private var lyManager:LinearLayoutManager? = null
     private var isNeedStartService:Boolean = false
 
+//    private val mReceiver by lazy { ConnectReceiver() }
+
     override fun getContentView(): Int = R.layout.activity_main
 
 
     override fun initView() {
         super.initView()
+
+//        val intentFilter = IntentFilter().apply {
+//            addAction(ConnectReceiver.CONNEDTED)
+//            addAction(ConnectReceiver.DBOPEN)
+//            addAction(ConnectReceiver.SERVICE_DES)
+//            addAction(ConnectReceiver.TOKEN_incorrect)
+//        }
+//
+//        registerReceiver(mReceiver,intentFilter)
 
         StatusBarUtil.setColor(this,ContextCompat.getColor(this,R.color.white),0)
         StatusBarUtil.setLightMode(this)
@@ -67,6 +80,7 @@ class MainActivity : BaseActivity() {
             adapter.addData(0,message)
             lyManager?.scrollToPositionWithOffset(0,0)
         }
+//        window.addFlags()
     }
 
     fun initToken(){
@@ -94,6 +108,11 @@ class MainActivity : BaseActivity() {
         this.token = token
         isNeedStartService = false
         ConnectService.openService(this,token)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+//        unregisterReceiver(mReceiver)
     }
 
 

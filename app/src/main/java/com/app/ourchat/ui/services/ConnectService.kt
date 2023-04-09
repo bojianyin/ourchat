@@ -1,23 +1,14 @@
 package com.app.ourchat.ui.services
-
-import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import android.os.Looper
-import android.os.PowerManager
 import android.util.Log
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import com.app.ourchat.R
+import com.app.ourchat.ui.broadcast.ConnectReceiver
 import com.app.ourchat.utils.EventBusUtil
 import com.app.ourchat.utils.MessageEvent
 import com.app.ourchat.utils.NotificationUtil
-import com.app.ourchat.utils.ToastUtil
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -31,8 +22,6 @@ import java.util.concurrent.TimeUnit
 class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     var connectToken = ""
-    private var wakeLock: PowerManager.WakeLock? = null
-    private var a=0;
 
     private var disposable:Disposable? = null
     companion object {
@@ -64,18 +53,13 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
         Log.d("ConnectService","onCreate>>>")
         NotificationUtil.startForegroundWithNotification(this)
 
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyKeepScreen")
-        wakeLock?.acquire()
         RongCoreClient.setConnectionStatusListener(this)
 
-        disposable = Observable.interval(5000L,2000L,TimeUnit.MILLISECONDS)
+        disposable = Observable.interval(5000L,5000L,TimeUnit.MILLISECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                a++
-                Toast.makeText(this,"定时任务running a=$a...",Toast.LENGTH_SHORT).show()
-                Log.d("ConnectService","disposableing.......")
+                Log.d("ConnectService","whileing into...")
                 if(isConnectService) return@subscribe
                 connectIM()
             }
@@ -83,8 +67,13 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(isConnectService) {
+
+//            sendMyBroadcast(ConnectReceiver.CONNEDTED)
             EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
-            if(isOpenNativeDB) EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
+            if(isOpenNativeDB) {
+//                sendMyBroadcast(ConnectReceiver.DBOPEN)
+                EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
+            }
             return super.onStartCommand(intent, flags, startId)
         }
         intent?.run {
@@ -102,7 +91,6 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        wakeLock?.release()
         isConnectService = false
         EventBusUtil.postStickyMessage(MessageEvent(MessageEvent.msg_service_destory))
         disposable?.dispose()
@@ -116,6 +104,8 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
             //连接成功，如果 onDatabaseOpened() 时没有页面跳转，也可在此时进行跳转。
             isConnectService = true
 
+
+//            sendMyBroadcast(ConnectReceiver.CONNEDTED)
             EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
 
         }
@@ -130,6 +120,8 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
                 } else if(equals(RongIMClient.ConnectionErrorCode.RC_CONNECTION_EXIST)){
                     //连接已经存在，不需要重复连接。
                     isConnectService = true
+
+//                    sendMyBroadcast(ConnectReceiver.CONNEDTED)
                     EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_connect_success))
                 }else{
 
@@ -142,6 +134,8 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
             if(RongIMClient.DatabaseOpenStatus.DATABASE_OPEN_SUCCESS.equals(code)) {
                 //本地数据库打开，跳转到会话列表页面
                 isOpenNativeDB = true
+
+//                sendMyBroadcast(ConnectReceiver.DBOPEN)
                 EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_db_open))
             } else {
                 //数据库打开失败，可以弹出 toast 提示。
@@ -168,6 +162,7 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
             IRongCoreListener.ConnectionStatusListener.ConnectionStatus.TOKEN_INCORRECT -> {
                 isConnectService = false
+//                sendMyBroadcast(ConnectReceiver.TOKEN_incorrect)
                 EventBusUtil.postMessage(MessageEvent(MessageEvent.msg_token_incorrect))
 
                 stopSelf()
@@ -180,5 +175,12 @@ class ConnectService : Service(), IRongCoreListener.ConnectionStatusListener {
 
             }
         }
+    }
+
+    fun sendMyBroadcast(action:String){
+        val intent = Intent().apply {
+            this.action = action
+        }
+        sendBroadcast(intent)
     }
 }

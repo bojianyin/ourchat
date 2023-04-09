@@ -3,11 +3,11 @@
     package="com.app.ourchat">
 
     <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.DEVICE_POWER"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DEVICE_POWER" />
 
     <application
         android:name=".OurApplication"
@@ -18,7 +18,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OurChat"
         android:usesCleartextTraffic="true">
-        <activity android:name=".ui.activity.SplashActivity" android:exported="true" android:theme="@style/splash_theme">
+
+        <receiver
+            android:name=".ui.broadcast.ConnectReceiver"
+            android:enabled="true"
+            android:exported="true">
+
+        </receiver>
+
+        <activity
+            android:name=".ui.activity.SplashActivity"
+            android:exported="true"
+            android:theme="@style/splash_theme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,8 +38,8 @@
         </activity>
         <activity
             android:name=".ui.activity.MainActivity"
-            android:exported="true" android:launchMode="singleTop">
-        </activity>
+            android:exported="true"
+            android:launchMode="singleTop"></activity>
 
         <receiver
             android:name="io.rong.push.notification.PushMessageReceiver"
@@ -42,9 +53,7 @@
 
         <service
             android:name=".ui.services.ConnectService"
-            android:exported="false">
-
-        </service>
+            android:exported="false"></service>
     </application>
 
 </manifest>
